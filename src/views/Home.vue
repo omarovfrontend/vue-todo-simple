@@ -6,59 +6,109 @@
       </header>
 
       <ul class="todo-list">
-        <li class="todo-item">
+        <template v-if="todoItems.length">
+          <li
+            v-for="todoItem in todoItems"
+            :key="todoItem.id"
+            class="todo-item"
+          >
             <div class="todo-item__name">
-              <input type="checkbox" id="check1">
-              <label for="check1">Посмотреть фильм</label>
+              <input
+                type="checkbox"
+                :value="todoItem.complete"
+                :id="todoItem.id"
+                @change="handleTodoComplete({ id: todoItem.id, complete: todoItem.complete })"
+              >
+              <label :for="todoItem.id">{{ todoItem.label }}</label>
             </div>
-            <button class="todo-item__delete-btn">
+            <button class="todo-item__delete-btn" type="button" @click="handleTodoRemove(todoItem.id)">
               <i class="fas fa-trash-alt"></i>
             </button>
-        </li>
-        <li class="todo-item">
-            <div class="todo-item__name">
-              <input type="checkbox" id="check2">
-              <label for="check2">Сыграть в футбол</label>
-            </div>
-            <button class="todo-item__delete-btn">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-        </li>
-        <li class="todo-item">
-            <div class="todo-item__name">
-              <input type="checkbox" id="check3">
-              <label for="check3">Пойти на прогулку</label>
-            </div>
-            <button class="todo-item__delete-btn">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-        </li>
-        <li class="todo-item">
-            <div class="todo-item__name">
-              <input type="checkbox" id="check4">
-              <label for="check4">Сделать зарядку</label>
-            </div>
-            <button class="todo-item__delete-btn">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-        </li>
-        <li class="todo-item">
-            <div class="todo-item__name">
-              <input type="checkbox" id="check5">
-              <label for="check5">Купить продукты</label>
-            </div>
-            <button class="todo-item__delete-btn">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-        </li>
+          </li>
+        </template>
+        <span v-else>Нет задач</span>
       </ul>
 
       <footer class="todo-action">
-        <input class="todo-action__field" type="text" placeholder="Введите текст задачи...">
+        <input
+          v-model="newValue"
+          class="todo-action__field"
+          type="text"
+          placeholder="Введите текст задачи..."
+          @change="handleAddTodo"
+        >
       </footer>
     </div>
   </div>
 </template>
+
+<script>
+  export default {
+    name: 'HomePage',
+
+    data () {
+      return {
+        todoItems: [],
+
+        newValue: ''
+      }
+    },
+
+    mounted() {
+      this.fetchTodos()
+    },
+
+    methods: {
+      async fetchTodos() {
+        const response = await fetch('/api/todo')
+        const todos = await response.json()
+        this.todoItems = todos
+      },
+
+      async handleTodoComplete(params) {
+        console.log('params', params)
+        await fetch(`/api/todo/${params.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            complete: !params.complete
+          })
+        })
+      },
+
+      async handleTodoRemove(id) {
+        await fetch('/api/todo/' + id, {
+          method: 'DELETE',
+        })
+        this.todoItems = this.todoItems.filter(todo => todo.id !== id)
+      },
+
+      async handleAddTodo() {
+        const response = await fetch('/api/todo', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            label: this.newValue,
+            complete: false
+          })
+        })
+
+        const newTodo = await response.json()
+        console.log('newTodo', newTodo)
+
+        this.todoItems.push(newTodo)
+
+        this.newValue = ''
+      }
+    }
+  }
+</script>
 
 <style lang="scss">
   * {
@@ -75,6 +125,7 @@
     min-height: 100vh;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 11px;
+    padding: 50px 0;
   }
 
   .todo-wrapper {
