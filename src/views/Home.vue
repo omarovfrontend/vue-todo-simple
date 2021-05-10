@@ -153,6 +153,11 @@
     list-style: none;
   }
 
+  .todo-list span {
+    padding-left: 15px;
+    line-height: 25px;
+  }
+
   .todo-item {
     display: flex;
     justify-content: space-between;
